@@ -68,9 +68,15 @@ class WhisperTranscriber:
             print(f"Error compressing file: {str(e)}")
             raise
 
+    def format_timestamp(self, seconds):
+        """Convert seconds to MM:SS format"""
+        minutes = int(seconds // 60)
+        seconds = int(seconds % 60)
+        return f"{minutes:02d}:{seconds:02d}"
+
     def transcribe(self, audio_file_path):
         """
-        Transcribe the given audio file using OpenAI's Whisper API
+        Transcribe the given audio file using OpenAI's Whisper API with timestamps
         """
         print(f"Starting transcription of {audio_file_path}")
         
@@ -85,21 +91,35 @@ class WhisperTranscriber:
                 print(f"Compressed file created at: {audio_file_path}")
             
             with open(audio_file_path, "rb") as audio_file:
-                # Call OpenAI's Audio API for transcription
+                # Updated API call to include timestamps
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
-                    file=audio_file
+                    file=audio_file,
+                    response_format="verbose_json",
+                    timestamp_granularities=["segment"]
                 )
 
-            # Create output filename based on input filename
+            # Create folder name based on input filename
             original_name = os.path.splitext(os.path.basename(audio_file_path))[0]
             if original_name.startswith('compressed_'):
                 original_name = original_name[len('compressed_'):]
-            output_file = os.path.join(self.output_dir, f"{original_name}_transcript.txt")
+            
+            # Create folder path and ensure it exists
+            folder_path = os.path.join(self.output_dir, original_name)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
 
-            # Save the transcription
+            # Create markdown file path inside the new folder
+            output_file = os.path.join(folder_path, "transcription.md")
+
+            # Updated transcription saving with timestamps
             with open(output_file, "w", encoding="utf-8") as f:
-                f.write(transcript.text)
+                f.write("# Transcription with Timestamps\n\n")
+                for segment in transcript.segments:
+                    # Format timestamps as [MM:SS]
+                    start_time = self.format_timestamp(segment.start)
+                    end_time = self.format_timestamp(segment.end)
+                    f.write(f"[{start_time} - {end_time}] {segment.text}\n\n")
 
             print(f"Transcription completed and saved to {output_file}")
             
