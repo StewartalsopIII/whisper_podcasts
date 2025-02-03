@@ -241,6 +241,27 @@ output/
    output_format: markdown
    ```
 
+Integration with Existing System:
+The prompt registry integrates with the current application flow:
+1. monitor.py detects new podcast files
+2. transcriber.py creates transcript
+3. prompt system:
+   - Scans prompts/registry folders
+   - Loads YAML prompt files
+   - Checks trigger conditions
+   - Runs applicable prompts
+   - Saves results in output/episode_name/
+     * transcription.md (from transcriber)
+     * summary.md (from prompts)
+     * topics.md (from prompts)
+     * etc.
+
+Required Components:
+- YAML parser for prompt files
+- Prompt manager class for loading/running prompts
+- Integration point in transcriber.py
+- Results management system
+
 2. Create core prompt templates:
    - Basic episode summary
    - Key points extraction
