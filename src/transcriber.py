@@ -91,12 +91,11 @@ class WhisperTranscriber:
                 print(f"Compressed file created at: {audio_file_path}")
             
             with open(audio_file_path, "rb") as audio_file:
-                # Updated API call to include timestamps
+                # Using srt format to get timestamps
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
-                    response_format="verbose_json",
-                    timestamp_granularities=["segment"]
+                    response_format="srt"
                 )
 
             # Create folder name based on input filename
@@ -112,14 +111,11 @@ class WhisperTranscriber:
             # Create markdown file path inside the new folder
             output_file = os.path.join(folder_path, "transcription.md")
 
-            # Updated transcription saving with timestamps
+            # Write the transcript with timestamps
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write("# Transcription with Timestamps\n\n")
-                for segment in transcript.segments:
-                    # Format timestamps as [MM:SS]
-                    start_time = self.format_timestamp(segment.start)
-                    end_time = self.format_timestamp(segment.end)
-                    f.write(f"[{start_time} - {end_time}] {segment.text}\n\n")
+                # SRT format is returned as a string, we'll write it directly
+                f.write(transcript)
 
             print(f"Transcription completed and saved to {output_file}")
             
