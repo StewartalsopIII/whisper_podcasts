@@ -2,6 +2,8 @@ import os
 import subprocess
 from openai import OpenAI
 from dotenv import load_dotenv
+from test import run_after_transcription
+from test import run_after_transcription
 
 class WhisperTranscriber:
     MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB in bytes
@@ -118,6 +120,17 @@ class WhisperTranscriber:
                 f.write(transcript)
 
             print(f"Transcription completed and saved to {output_file}")
+            
+            # Add guest detection
+            try:
+                print("Detecting guest information...")
+                guest_name = run_after_transcription(output_file)
+                if guest_name:
+                    print(f"Guest detected: {guest_name}")
+                else:
+                    print("Could not detect guest information")
+            except Exception as e:
+                print(f"Error detecting guest information: {e}")
             
             # Clean up temporary compressed file if it exists
             if audio_file_path.startswith(self.temp_dir):
