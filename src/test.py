@@ -3,6 +3,21 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
 
+def clean_transcript_intro(transcript_content, max_chars=2000):
+    """Clean and get introduction portion of transcript"""
+    # Get first portion of transcript
+    intro = transcript_content[:max_chars]
+    
+    # Remove timestamp lines and numbers
+    cleaned_lines = []
+    for line in intro.split('\n'):
+        # Skip timestamp lines and standalone numbers
+        if '-->' in line or line.strip().isdigit():
+            continue
+        cleaned_lines.append(line.strip())
+    
+    return ' '.join(cleaned_lines)
+
 def read_transcript(file_path):
     """Read the transcript file content"""
     transcript_path = Path(file_path)
@@ -34,13 +49,19 @@ def test_openai_api(transcript_content):
     )
     
     try:
+        # Clean and get introduction portion
+        intro_text = clean_transcript_intro(transcript_content)
+        
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
+                    "role": "system",
+                    "content": "You are an assistant that extracts podcast guest names from transcripts. The guest name is usually mentioned in the first few lines when the host introduces them."
+                },
+                {
                     "role": "user", 
-                    "content": f"Here is a transcript from the Crazy Wisdom podcast: {transcript_content}\n\n"
-                              f"Who was interviewed in this episode? Please return only their name, nothing else."
+                    "content": f"Extract the guest name from this Crazy Wisdom podcast transcript. Return only the guest's full name:\n\n{intro_text}"
                 }
             ]
         )
