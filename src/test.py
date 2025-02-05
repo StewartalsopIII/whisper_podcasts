@@ -1,7 +1,14 @@
 import os
+import sys
 from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
+
+# Get absolute path to project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
+from prompts.registry.essential.guest_extraction import create_messages
 
 def clean_transcript_intro(transcript_content, max_chars=2000):
     """Clean and get introduction portion of transcript"""
@@ -54,16 +61,7 @@ def test_openai_api(transcript_content):
         
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an assistant that extracts podcast guest names from transcripts. The guest name is usually mentioned in the first few lines when the host introduces them."
-                },
-                {
-                    "role": "user", 
-                    "content": f"Extract the guest name from this Crazy Wisdom podcast transcript. Return only the guest's full name:\n\n{intro_text}"
-                }
-            ]
+            messages=create_messages(intro_text)
         )
         
         guest_name = response.choices[0].message.content.strip()
