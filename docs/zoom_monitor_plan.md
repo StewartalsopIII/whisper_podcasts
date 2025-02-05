@@ -57,3 +57,85 @@ USER_PROMPT_TEMPLATE = """Extract the guest name from this Crazy Wisdom podcast 
      - Guest Name: From guest_extraction.py
      - Topic: From expanded prompt
      - Date: From original folder name
+
+
+# Zoom Recording Monitor Implementation
+February 5, 2025 - 18:00
+
+## Achievements from Zoom Monitor Plan
+Successfully implemented part 1 and 2 of the monitoring flow:
+
+1. ✓ Monitor detects new Zoom folder creation
+   - Configured to watch: `/Users/stewartalsop/Dropbox/Crazy Wisdom/Beautifully Broken/Test for Transcription`
+   - Successfully detects new folders as they're created
+
+2. ✓ Wait Period
+   - Implemented file size monitoring to ensure complete conversion
+   - Automatically detects when M4A file is fully written
+   - Successfully waits for the full conversion process
+
+## Technical Implementation Details
+
+### Key Components
+1. File System Monitoring
+   - Used `watchdog` library with `PollingObserver`
+   - Chose polling over filesystem events for better reliability with Dropbox
+   - Recursive monitoring to catch all nested file events
+
+2. M4A Detection System
+   - Tracks processed files to avoid duplicates
+   - Ignores files in 'Audio Record' subfolder
+   - Waits for file size to stabilize before declaring ready
+
+### Challenges Solved
+1. Dropbox Sync Issues
+   - Switched to `PollingObserver` from default observer
+   - Added retry mechanisms for file size checks
+   - Handled temporary files during conversion
+
+2. Duplicate Event Handling
+   - Implemented file tracking with sets
+   - Added logic to prevent duplicate processing
+   - Filtered out irrelevant file modifications
+
+3. File Conversion Detection
+   - Added file size monitoring
+   - Configurable check intervals and timeout
+   - Progress tracking during conversion
+
+### Code Structure
+```python
+class ZoomFolderHandler(FileSystemEventHandler):
+    - Monitors base directory
+    - Tracks processed files
+    - Handles file move events
+    - Processes M4A files
+
+def _wait_for_file_ready():
+    - Monitors file size changes
+    - Confirms when conversion is complete
+    - Shows progress during conversion
+```
+
+## Next Steps
+1. Implement transcription processing for ready files
+2. Add guest name extraction from transcripts
+3. Implement folder renaming system
+4. Add error handling and logging
+5. Add configuration management
+
+## Lessons Learned
+1. Filesystem Events
+   - Dropbox requires different handling than local files
+   - Polling is more reliable than event-based monitoring
+   - Need to handle both temporary and final files
+
+2. File Processing
+   - Must wait for files to be fully written
+   - Size stabilization is a reliable indicator
+   - Need to track processed files to avoid duplicates
+
+3. Error Handling
+   - Important to handle moved/renamed files
+   - Need to manage duplicate events
+   - Must account for network filesystem quirks
