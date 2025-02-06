@@ -75,10 +75,11 @@ class PodcastFolderManager:
         
     def _generate_folder_name(self, guest, topic, date):
         """Generate new folder name"""
+        # If guest is "Unknown Speaker", use topic instead
+        primary_name = topic if guest == "Unknown Speaker" else guest
         # Clean the components to make them safe for filenames
-        guest = self._clean_name(guest)
-        topic = self._clean_name(topic)
-        return f"{guest} - {date}"
+        primary_name = self._clean_name(primary_name)
+        return f"{primary_name} - {date}"
         
     def _clean_name(self, name):
         """Clean a name to make it safe for filenames"""
@@ -100,6 +101,9 @@ class PodcastFolderManager:
             
             # Perform the rename
             old_path.rename(new_path)
+            
+            # Add the NEW path to processed_folders, not the old one
+            self.processed_folders.add(str(new_path))
             return True
             
         except Exception as e:

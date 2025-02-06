@@ -82,18 +82,24 @@ def extract_guest_name(transcript_content):
         )
         
         guest_name = response.choices[0].message.content.strip()
-        is_valid, error_msg = validate_extraction(guest_name=guest_name)
         
-        if not is_valid:
-            print(f"Warning: {error_msg}")
-            return "Unknown Guest"
+        # Check for error messages or invalid responses
+        if (not guest_name or 
+            len(guest_name) > 50 or 
+            "sorry" in guest_name.lower() or 
+            "i apologize" in guest_name.lower() or
+            "could not" in guest_name.lower() or
+            "cannot" in guest_name.lower() or
+            "don't see" in guest_name.lower() or
+            "do not see" in guest_name.lower()):
+            return None
             
         print("Guest identified:", guest_name)
         return guest_name
         
     except Exception as e:
         print("Error extracting guest name:", e)
-        return "Unknown Guest"
+        return None
 
 def extract_topic(transcript_content):
     """Extract main topic using OpenAI API"""
@@ -133,21 +139,45 @@ def run_after_transcription(transcription_path):
         # Get transcript content
         transcript_content = read_transcript(transcription_path)
         
-        # Extract information
+        # Get both guest name and topic
         guest_name = extract_guest_name(transcript_content)
         topic = extract_topic(transcript_content)
         
-        # Save information
+        print("Guest name extracted:", guest_name)
+        print("Topic extracted:", topic)
+        
+        # Determine the name to use for the folder
+        if guest_name and not any(phrase in guest_name.lower() for phrase in [
+            "does not mention",
+            "no guest",
+            "cannot find",
+            "could not find",
+            "sorry",
+            "apologize"
+        ]):
+            folder_name = guest_name
+            metadata_guest = guest_name
+        elif topic and 2 <= len(topic.split()) <= 5:
+            folder_name = topic
+            metadata_guest = "Unknown Speaker"
+            print(f"Using topic as folder name: {topic}")
+        else:
+            folder_name = "Unknown Speaker"
+            metadata_guest = "Unknown Speaker"
+            topic = "General Discussion"
+            
+        # Save information with correct metadata
         episode_folder = get_episode_folder(transcription_path)
-        info_file_path = save_episode_info(episode_folder, guest_name, topic)
+        info_file_path = save_episode_info(episode_folder, metadata_guest, topic)
         
         print(f"Episode information saved to: {info_file_path}")
-        return guest_name
+        print(f"Folder will be named: {folder_name}")
+        return folder_name
         
     except Exception as e:
         print(f"Error processing transcript: {e}")
-        return None
-
+        return "Unknown Speaker"
+    
 if __name__ == "__main__":
     # Test with a sample path - adjust this path as needed
     sample_path = Path("output/test_episode/transcription.md")
