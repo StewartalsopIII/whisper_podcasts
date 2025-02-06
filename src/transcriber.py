@@ -76,9 +76,13 @@ class WhisperTranscriber:
         seconds = int(seconds % 60)
         return f"{minutes:02d}:{seconds:02d}"
 
-    def transcribe(self, audio_file_path):
+    def transcribe(self, audio_file_path, output_folder=None):
         """
         Transcribe the given audio file using OpenAI's Whisper API with timestamps
+        
+        Args:
+            audio_file_path: Path to the audio file
+            output_folder: Optional custom output folder path. If None, uses default output directory
         """
         print(f"Starting transcription of {audio_file_path}")
         
@@ -100,17 +104,21 @@ class WhisperTranscriber:
                     response_format="srt"
                 )
 
-            # Create folder name based on input filename
-            original_name = os.path.splitext(os.path.basename(audio_file_path))[0]
-            if original_name.startswith('compressed_'):
-                original_name = original_name[len('compressed_'):]
+            # Determine output location
+            if output_folder:
+                folder_path = output_folder
+            else:
+                # Use default output location
+                original_name = os.path.splitext(os.path.basename(audio_file_path))[0]
+                if original_name.startswith('compressed_'):
+                    original_name = original_name[len('compressed_'):]
+                folder_path = os.path.join(self.output_dir, original_name)
             
-            # Create folder path and ensure it exists
-            folder_path = os.path.join(self.output_dir, original_name)
+            # Ensure output folder exists
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
 
-            # Create markdown file path inside the new folder
+            # Create markdown file path inside the folder
             output_file = os.path.join(folder_path, "transcription.md")
 
             # Write the transcript with timestamps
