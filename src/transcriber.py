@@ -2,8 +2,7 @@ import os
 import subprocess
 from openai import OpenAI
 from dotenv import load_dotenv
-from test import run_after_transcription
-from test import run_after_transcription
+from post_transcription_processor import run_after_transcription
 
 class WhisperTranscriber:
     MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB in bytes
