@@ -10,6 +10,7 @@ sys.path.append(project_root)
 
 from prompts.registry.essential.guest_extraction import create_messages as create_guest_messages
 from prompts.registry.essential.topic_extraction import create_messages as create_topic_messages
+from prompts.registry.essential.show_notes import generate_show_notes
 
 def clean_transcript_intro(transcript_content, max_chars=2000):
     """Clean and get introduction portion of transcript"""
@@ -172,6 +173,14 @@ def run_after_transcription(transcription_path):
         
         print(f"Episode information saved to: {info_file_path}")
         print(f"Folder will be named: {folder_name}")
+        # Generate show notes
+        try:
+            show_notes_path = generate_show_notes(transcription_path)
+            if show_notes_path:
+                print(f"Show notes generated at: {show_notes_path}")
+        except Exception as e:
+            print(f"Error generating show notes: {e}")
+        
         return folder_name
         
     except Exception as e:

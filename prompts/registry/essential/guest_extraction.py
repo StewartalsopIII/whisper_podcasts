@@ -1,6 +1,9 @@
 SYSTEM_PROMPT = """You are an assistant that extracts podcast guest names from transcripts. The guest name is usually mentioned in the first few lines when the host introduces them."""
 
-USER_PROMPT_TEMPLATE = """Extract the guest name from this Crazy Wisdom podcast transcript. Return only the guest's full name:
+USER_PROMPT_TEMPLATE = """Return ONLY the guest's full name with no additional text or explanation.
+For example:
+❌ "The guest's name is John Smith"
+✅ "John Smith"
 
 {transcript_text}"""
 
