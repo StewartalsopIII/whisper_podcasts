@@ -5,15 +5,23 @@ from watchdog.events import FileSystemEventHandler
 import os
 from pathlib import Path
 from transcriber import WhisperTranscriber
+from folder_manager import PodcastFolderManager
 
 class ZoomFolderHandler(FileSystemEventHandler):
     def __init__(self, base_path):
         self.base_path = base_path
         self.processed_m4a = set()  # Track M4A files we've already processed
         self.transcriber = WhisperTranscriber()  # Initialize transcriber
+        self.folder_manager = PodcastFolderManager()  # Initialize folder manager
         print(f"Monitoring for new recordings in: {self.base_path}")
         
     def on_moved(self, event):
+        # Skip if the path contains the renamed format (guest name followed by date)
+        if any(self.folder_manager.processed_folders):
+            for processed in self.folder_manager.processed_folders:
+                if processed in event.dest_path:
+                    return
+                
         if event.dest_path.endswith('.m4a') and not 'Audio Record' in event.dest_path:
             self._process_m4a(event.dest_path)
             
@@ -35,6 +43,9 @@ class ZoomFolderHandler(FileSystemEventHandler):
                 # Transcribe and save to the same folder
                 transcript_path = self.transcriber.transcribe(file_path, output_folder)
                 print(f"✅ Transcription saved to: {transcript_path}")
+                
+                # After successful transcription, try to rename the folder
+                self.folder_manager.rename_folder(output_folder)
                 return True
             except Exception as e:
                 print(f"❌ Transcription failed: {str(e)}")
