@@ -10,7 +10,7 @@ This document outlines the strategy for automating comprehensive show notes gene
 prompts/registry/essential/show_notes/
 ├── __init__.py
 ├── components/
-│   ├── episode_header.py        # Episode name, description, conversation starters
+│   ├── GPT_creator.py        # Episode name, description, conversation starters
 │   ├── timestamps.py            # 5-minute interval content markers
 │   ├── intro_paragraph.py       # Stewart's intro with guest links
 │   ├── title_suggestions.py     # Title options based on conversation style
@@ -23,7 +23,7 @@ prompts/registry/essential/show_notes/
 
 ## Component Details
 
-### Episode Header (`episode_header.py`)
+### GPT Creator (`GPT_creator.py`)
 - **Input**: Full transcript
 - **Output**: 
   - Name (format: "Crazy Wisdom Companion: [Guest Name]")
