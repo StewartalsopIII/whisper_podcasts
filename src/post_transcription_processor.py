@@ -4,6 +4,13 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
 
+# Add project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from prompts.registry.essential.show_notes.timestamps import extract_timestamps
+
 # Get absolute path to project root
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
@@ -173,9 +180,14 @@ def run_after_transcription(transcription_path):
         
         print(f"Episode information saved to: {info_file_path}")
         print(f"Folder will be named: {folder_name}")
-        # Generate show notes
+        # Generate timestamps and show notes
         try:
-            show_notes_path = generate_show_notes(transcription_path)
+            # First generate timestamps
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            timestamps = extract_timestamps(client, transcript_content)
+            
+            # Generate show notes
+            show_notes_path = generate_show_notes(transcription_path, timestamps)
             if show_notes_path:
                 print(f"Show notes generated at: {show_notes_path}")
         except Exception as e:

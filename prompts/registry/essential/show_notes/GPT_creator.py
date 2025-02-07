@@ -37,7 +37,7 @@ def create_final_messages(all_insights):
         }
     ]
 
-def extract_gpt_content(client, transcript_text):
+def extract_gpt_content(client, transcript_text, timestamps=None):
     """Extract GPT content using OpenAI API with chunking"""
     try:
         # Process chunks using the chunker
@@ -57,13 +57,17 @@ def extract_gpt_content(client, transcript_text):
         
         # Generate final show notes
         print("Generating final show notes...")
-        response = client.chat.completions.create(
+        show_notes = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=create_final_messages(all_insights),
             temperature=0.7
-        )
+        ).choices[0].message.content
         
-        return response.choices[0].message.content
+        # Add timestamps if available
+        if timestamps:
+            show_notes = f"{show_notes}\n\n{timestamps}"
+        
+        return show_notes
         
     except Exception as e:
         print(f"Error extracting GPT content: {e}")
