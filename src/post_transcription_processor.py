@@ -18,6 +18,7 @@ sys.path.append(project_root)
 from prompts.registry.essential.guest_extraction import create_messages as create_guest_messages
 from prompts.registry.essential.topic_extraction import create_messages as create_topic_messages
 from prompts.registry.essential.show_notes import generate_show_notes
+from prompts.registry.essential.show_notes.intro_paragraph import generate_intro_paragraph
 
 def clean_transcript_intro(transcript_content, max_chars=2000):
     """Clean and get introduction portion of transcript"""
@@ -45,13 +46,21 @@ def get_episode_folder(transcription_path):
     """Get the episode folder from transcription path"""
     return Path(transcription_path).parent
 
-def save_episode_info(episode_folder, guest_name, topic):
+def save_episode_info(episode_folder, guest_name, topic, intro_paragraph=None):
     """Save guest and topic information to a markdown file"""
+    content = ["# Episode Information\n"]
+    
+    if intro_paragraph:
+        content.append(intro_paragraph + "\n")
+    
+    content.extend([
+        f"Guest: {guest_name}\n",
+        f"Topic: {topic}\n"
+    ])
+    
     info_file_path = Path(episode_folder) / "episode_info.md"
     info_file_path.write_text(
-        "# Episode Information\n\n"
-        f"Guest: {guest_name}\n"
-        f"Topic: {topic}\n",
+        "\n".join(content),
         encoding='utf-8'
     )
     return str(info_file_path)
@@ -174,9 +183,18 @@ def run_after_transcription(transcription_path):
             metadata_guest = "Unknown Speaker"
             topic = "General Discussion"
             
+        # Generate intro paragraph
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        intro_paragraph, error = generate_intro_paragraph(client, transcript_content, metadata_guest)
+        if error:
+            print(f"Warning: {error}")
+            intro_paragraph = None
+        else:
+            print("Successfully generated intro paragraph")
+            
         # Save information with correct metadata
         episode_folder = get_episode_folder(transcription_path)
-        info_file_path = save_episode_info(episode_folder, metadata_guest, topic)
+        info_file_path = save_episode_info(episode_folder, metadata_guest, topic, intro_paragraph)
         
         print(f"Episode information saved to: {info_file_path}")
         print(f"Folder will be named: {folder_name}")
