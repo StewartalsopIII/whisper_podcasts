@@ -19,6 +19,8 @@ from prompts.registry.essential.guest_extraction import create_messages as creat
 from prompts.registry.essential.topic_extraction import create_messages as create_topic_messages
 from prompts.registry.essential.show_notes import generate_show_notes
 from prompts.registry.essential.show_notes.intro_paragraph import generate_intro_paragraph
+from prompts.registry.essential.show_notes.keyword_extraction import create_messages as create_keyword_messages
+from prompts.registry.essential.show_notes.title_suggestions import create_messages as create_title_messages
 
 def clean_transcript_intro(transcript_content, max_chars=2000):
     """Clean and get introduction portion of transcript"""
@@ -46,7 +48,7 @@ def get_episode_folder(transcription_path):
     """Get the episode folder from transcription path"""
     return Path(transcription_path).parent
 
-def save_episode_info(episode_folder, guest_name, topic, intro_paragraph=None):
+def save_episode_info(episode_folder, guest_name, topic, intro_paragraph=None, titles=None, keywords=None):
     """Save guest and topic information to a markdown file"""
     content = ["# Episode Information\n"]
     
@@ -57,6 +59,12 @@ def save_episode_info(episode_folder, guest_name, topic, intro_paragraph=None):
         f"Guest: {guest_name}\n",
         f"Topic: {topic}\n"
     ])
+
+    if keywords:
+        content.append(f"\n## Keywords\n{keywords}\n")
+
+    if titles:
+        content.append("\n## Title Suggestions\n" + titles + "\n")
     
     info_file_path = Path(episode_folder) / "episode_info.md"
     info_file_path.write_text(
@@ -204,6 +212,39 @@ def run_after_transcription(transcription_path):
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             timestamps = extract_timestamps(client, transcript_content)
             
+            # Extract keywords and generate titles
+            try:
+                # Extract keywords
+                keywords_response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=create_keyword_messages(transcript_content[:3000], metadata_guest, topic)
+                )
+                keywords = keywords_response.choices[0].message.content.strip()
+                print(f"Keywords extracted: {keywords}")
+
+                # Validate keywords
+                if keywords and "," in keywords:  # Ensure we got a comma-separated list
+                    # Generate title suggestions
+                    titles_response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=create_title_messages(metadata_guest, topic, keywords)
+                    )
+                    titles = titles_response.choices[0].message.content.strip()
+                    if titles and titles.count("\n") >= 5:  # Basic validation that we got multiple titles
+                        print("Title suggestions generated")
+                    else:
+                        print("Warning: Title generation produced unexpected format")
+                        titles = None
+                else:
+                    print("Warning: Keyword extraction produced unexpected format")
+                    titles = None
+            except Exception as e:
+                print(f"Error in title generation pipeline: {e}")
+                titles = None
+
+            # Update episode info with keywords and titles (if we have them)
+            info_file_path = save_episode_info(episode_folder, metadata_guest, topic, intro_paragraph, titles, keywords)
+
             # Generate show notes
             show_notes_path = generate_show_notes(transcription_path, timestamps)
             if show_notes_path:
