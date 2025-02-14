@@ -100,3 +100,7 @@ The system will require the following configuration:
 - The system will initially focus on M4A files only
 - All processing will be asynchronous
 - Failed transcriptions will be logged for manual review
+
+
+Little things to fix
+1. When I do an interview in Spanish, the show notes are in English. 
